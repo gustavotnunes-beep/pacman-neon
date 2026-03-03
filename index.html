@@ -3,84 +3,53 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pac-Man Moderno</title>
+<title>Pac-Man Neon</title>
 
 <style>
-*{margin:0;padding:0;box-sizing:border-box}
-
 body{
+    margin:0;
     background:#0f0f1a;
     display:flex;
     justify-content:center;
     align-items:center;
     height:100vh;
-    font-family:Arial, sans-serif;
+    font-family:Arial;
     color:white;
 }
 
-#gameContainer{
+#container{
     text-align:center;
-}
-
-h1{
-    margin-bottom:10px;
-    color:#00ffff;
-    text-shadow:0 0 15px #00ffff;
 }
 
 canvas{
     background:#111;
     border:4px solid #00ffff;
-    box-shadow:0 0 30px #00ffff;
-}
-
-#ui{
-    margin-top:10px;
-    font-size:18px;
+    box-shadow:0 0 20px #00ffff;
 }
 
 button{
-    margin-top:15px;
+    margin-top:10px;
     padding:10px 20px;
-    border:none;
     background:#00ffff;
-    color:black;
-    font-weight:bold;
+    border:none;
     cursor:pointer;
-    border-radius:5px;
-}
-
-button:hover{
-    background:white;
+    font-weight:bold;
 }
 </style>
 </head>
 <body>
 
-<div id="gameContainer">
-    <h1>Pac-Man Neon</h1>
-    <canvas id="game" width="420" height="420"></canvas>
-    <div id="ui">
-        Pontos: <span id="score">0</span> |
-        Vidas: <span id="lives">3</span>
-    </div>
-    <button onclick="startGame()">Iniciar Jogo</button>
+<div id="container">
+<h1>Pac-Man Neon</h1>
+<p>Pontos: <span id="score">0</span> | Vidas: <span id="lives">3</span></p>
+<canvas id="game"></canvas>
+<br>
+<button onclick="startGame()">Iniciar</button>
 </div>
 
 <script>
-const canvas = document.getElementById("game");
-const ctx = canvas.getContext("2d");
-
-const tile = 21;
-const rows = 20;
-const cols = 20;
-
-let score = 0;
-let lives = 3;
-let gameRunning = false;
-
-let map = [];
-const originalMap = [
+const tile = 20;
+const mapData = [
 "####################",
 "#........##........#",
 "#.####.#.##.#.####.#",
@@ -98,34 +67,46 @@ const originalMap = [
 "####################"
 ];
 
+const rows = mapData.length;
+const cols = mapData[0].length;
+
+const canvas = document.getElementById("game");
+canvas.width = cols * tile;
+canvas.height = rows * tile;
+const ctx = canvas.getContext("2d");
+
+let map;
 let pacman;
-let ghosts = [];
+let ghosts;
+let score;
+let lives;
+let running=false;
 
 function resetMap(){
-    map = originalMap.map(row=>row.split(""));
+    map = mapData.map(r=>r.split(""));
 }
 
 function startGame(){
     resetMap();
-    score = 0;
-    lives = 3;
-    document.getElementById("score").innerText = score;
-    document.getElementById("lives").innerText = lives;
+    score=0;
+    lives=3;
+    running=true;
 
-    pacman = {x:1,y:1,dx:0,dy:0};
+    pacman={x:1,y:1,dx:0,dy:0};
 
-    ghosts = [
+    ghosts=[
         {x:10,y:7,color:"red"},
         {x:9,y:7,color:"pink"},
         {x:11,y:7,color:"cyan"},
         {x:10,y:8,color:"orange"}
     ];
 
-    gameRunning = true;
+    document.getElementById("score").innerText=score;
+    document.getElementById("lives").innerText=lives;
 }
 
-document.addEventListener("keydown", e=>{
-    if(!gameRunning) return;
+document.addEventListener("keydown",e=>{
+    if(!running)return;
     if(e.key==="ArrowUp"){pacman.dx=0;pacman.dy=-1;}
     if(e.key==="ArrowDown"){pacman.dx=0;pacman.dy=1;}
     if(e.key==="ArrowLeft"){pacman.dx=-1;pacman.dy=0;}
@@ -133,16 +114,16 @@ document.addEventListener("keydown", e=>{
 });
 
 function drawMap(){
-    for(let y=0;y<map.length;y++){
-        for(let x=0;x<map[y].length;x++){
+    for(let y=0;y<rows;y++){
+        for(let x=0;x<cols;x++){
             if(map[y][x]==="#"){
                 ctx.fillStyle="#001f3f";
                 ctx.fillRect(x*tile,y*tile,tile,tile);
             }
             if(map[y][x]==="."){
-                ctx.fillStyle="#fff";
+                ctx.fillStyle="white";
                 ctx.beginPath();
-                ctx.arc(x*tile+tile/2,y*tile+tile/2,3,0,Math.PI*2);
+                ctx.arc(x*tile+10,y*tile+10,3,0,Math.PI*2);
                 ctx.fill();
             }
         }
@@ -152,15 +133,15 @@ function drawMap(){
 function drawPacman(){
     ctx.fillStyle="yellow";
     ctx.beginPath();
-    ctx.arc(pacman.x*tile+tile/2,pacman.y*tile+tile/2,tile/2-2,0.2*Math.PI,1.8*Math.PI);
-    ctx.lineTo(pacman.x*tile+tile/2,pacman.y*tile+tile/2);
+    ctx.arc(pacman.x*tile+10,pacman.y*tile+10,8,0.2*Math.PI,1.8*Math.PI);
+    ctx.lineTo(pacman.x*tile+10,pacman.y*tile+10);
     ctx.fill();
 }
 
 function drawGhost(g){
     ctx.fillStyle=g.color;
     ctx.beginPath();
-    ctx.arc(g.x*tile+tile/2,g.y*tile+tile/2,tile/2-2,0,Math.PI*2);
+    ctx.arc(g.x*tile+10,g.y*tile+10,8,0,Math.PI*2);
     ctx.fill();
 }
 
@@ -181,17 +162,12 @@ function movePacman(){
 }
 
 function moveGhost(g){
-    let dx = pacman.x - g.x;
-    let dy = pacman.y - g.y;
+    let dirs=[[1,0],[-1,0],[0,1],[0,-1]];
+    dirs.sort(()=>Math.random()-0.5);
 
-    let options=[];
-    if(dx!==0) options.push([Math.sign(dx),0]);
-    if(dy!==0) options.push([0,Math.sign(dy)]);
-    options.push([1,0],[-1,0],[0,1],[0,-1]);
-
-    for(let move of options){
-        let nx=g.x+move[0];
-        let ny=g.y+move[1];
+    for(let d of dirs){
+        let nx=g.x+d[0];
+        let ny=g.y+d[1];
         if(map[ny] && map[ny][nx]!=="#"){
             g.x=nx;
             g.y=ny;
@@ -205,31 +181,23 @@ function checkCollision(){
         if(g.x===pacman.x && g.y===pacman.y){
             lives--;
             document.getElementById("lives").innerText=lives;
-            pacman.x=1; pacman.y=1;
+            pacman.x=1;
+            pacman.y=1;
             if(lives<=0){
-                alert("Game Over!");
-                gameRunning=false;
+                alert("Game Over");
+                running=false;
             }
         }
     }
 }
 
-function checkWin(){
-    for(let row of map){
-        if(row.includes(".")) return;
-    }
-    alert("Você venceu!");
-    gameRunning=false;
-}
-
 function gameLoop(){
     ctx.clearRect(0,0,canvas.width,canvas.height);
 
-    if(gameRunning){
+    if(running){
         movePacman();
         ghosts.forEach(moveGhost);
         checkCollision();
-        checkWin();
     }
 
     drawMap();
